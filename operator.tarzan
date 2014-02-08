@@ -1,0 +1,10 @@
+# http://coffeescript.org/#regexes
+fn         := /[-=]>/
+assign     := /[-+*/%<>&|^!?=]=/
+zerofillrs := />>>=??/
+doubles    := "--" | "++" | "::"
+logic      := ("&&" | "||" | "<<" | ">>") /=?/
+soak       := "?."
+range      := ".." | "..."
+
+operator   := fn | assign | zerofillrs | doubles | logic | soak | range
