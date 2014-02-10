@@ -39,6 +39,23 @@ executable tarzan
                        parsec >=3.1 && <3.2,
                        tarzan
 
+executable tarzan-www
+  default-language:    Haskell2010
+  main-is:             Web.hs
+  ghc-options:         -Wall
+  build-depends:       base >=4.6 && <5,
+                       containers >=0.5 && <0.6,
+                       range-set-list >=0.0 && <0.1,
+                       parsec >=3.1 && <3.2,
+                       http-types >=0.8 && <0.9,
+                       system-filepath >=0.4 && <0.5,
+                       wai >=2.0 && <2.1,
+                       wai-app-static >= 2.0 && <2.1,
+                       warp >=2.0 && <2.1,
+                       text >=0.11 && <0.12,
+                       bytestring >= 0.10 && <0.11,
+                       tarzan
+
 test-suite test
   default-language:    Haskell2010
   type:                exitcode-stdio-1.0
