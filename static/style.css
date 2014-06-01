@@ -60,3 +60,6 @@ code, textarea, pre {
 	line-height: 1em;
 }
 
+#input, #transform, #output {
+	margin-bottom: 10pt;
+}
