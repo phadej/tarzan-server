@@ -13,11 +13,14 @@ module Text.Tarzan.Regex (
   union,
   unions,
   kleene,
+  kstar,
+  kplus,
   parser,
   parseRe,
+  prettyRe,
   unsafeParseRe,
   escapedChar,
   ) where
 
-import Text.Tarzan.Regex.Definitions
+import Data.Tarzan
 import Text.Tarzan.Regex.Parser

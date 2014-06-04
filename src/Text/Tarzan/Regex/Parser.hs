@@ -7,8 +7,8 @@ import Text.Parsec.String
 
 import Text.Tarzan.Common.Parser
 
-import Text.Tarzan.Regex.Definitions (RE)
-import qualified Text.Tarzan.Regex.Definitions as RE
+import Data.Tarzan (RE)
+import qualified Data.Tarzan as RE
 import Data.Monoid
 
 reChar :: Parser RE

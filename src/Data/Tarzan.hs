@@ -1,4 +1,4 @@
-module Text.Tarzan.Regex.Definitions (
+module Data.Tarzan (
   RE,
   empty,
   nothing,
@@ -14,7 +14,10 @@ module Text.Tarzan.Regex.Definitions (
   union,
   unions,
   kleene,
+  kstar,
+  kplus,
   nullable,
+  prettyRe,
 ) where
 
 -- http://r6.ca/blog/20110808T035622Z.html
@@ -29,13 +32,13 @@ import qualified Data.RangeSet.List as RSet
 
 import Data.Monoid
 import Data.List (intercalate)
-import Data.Foldable (any)
+import Data.Foldable (any, all)
 import Data.Either
 
-import Text.Tarzan.Pretty
+import Text.Printf
 
 data RE = REChars (RSet Char)
-        | REAppend RE RE
+        | REAppend [RE]
         | REUnion (Set RE)
         | REKleene RE
   deriving (Eq, Ord, Show)
@@ -44,18 +47,6 @@ instance Monoid RE where
 	mempty = empty
 	mappend = union
 	mconcat = unions
-
-instance Pretty RE where
-  pretty r | r == eps    = ""
-  pretty (REChars cs)    = prettyRSetChar cs
-  pretty (REAppend a b)  = pretty a ++ pretty b
-  pretty (REUnion rs)    = "(?:" ++ intercalate "|" rs' ++ ")" ++ opt
-    where rs' = map pretty $ Set.toList $ Set.delete eps rs
-          opt | eps `Set.member` rs = "?"
-              | otherwise           = ""
-  pretty (REKleene r)    = case pretty r of
-                             [c]           -> c : "*"
-                             str           -> "(" ++ str ++ ")*"
 
 empty :: RE
 empty = REChars RSet.empty
@@ -87,13 +78,17 @@ string = foldr append eps . map char
 anychar :: RE
 anychar = REChars RSet.full
 
+appends :: [RE] -> RE
+appends rs
+  | any (== empty) rs  = empty
+  | otherwise          = case rs' of
+                           []   -> eps
+                           [r]  -> r
+                           _    -> REAppend rs'
+  where rs' = filter (/= eps) rs
+
 append :: RE -> RE -> RE
-append (REAppend a b) c       = append a (append b c)
-append a b
-  | a == empty || b == empty  = empty
-  | a == eps                  = b
-  | b == eps                  = a
-  | otherwise                 = REAppend a b
+append a b = appends [a, b]
 
 (<.>) :: RE -> RE -> RE
 (<.>) = append
@@ -110,7 +105,7 @@ sortUniq = Set.toList . Set.fromList
 
 nullable :: RE -> Bool
 nullable (REChars _)     = False
-nullable (REAppend a b)  = nullable a && nullable b
+nullable (REAppend rs)   = all nullable rs
 nullable (REUnion rs)    = any nullable rs
 nullable (REKleene _)    = True
 
@@ -134,3 +129,61 @@ kleene r
   | r == eps         = eps
 kleene (REKleene r)  = REKleene r
 kleene r             = REKleene r
+
+kstar :: RE -> RE
+kstar = kleene
+
+kplus :: RE -> RE
+kplus r = r <.> kstar r
+
+--- pretty 
+
+escapeChar :: Char -> String
+escapeChar '\n'   = "\\n"
+escapeChar '\t'   = "\\t"
+escapeChar '\r'   = "\\r"
+escapeChar c
+  | ord > 0xffff  = error "escapeChar: out of BMP"
+  | ord < 0x20    = '\\' : 'x' : printf "%02x" ord
+  | ord >= 0x80   = '\\' : 'u' : printf "%04x" ord
+  | c `elem` e    = '\\' : [c]
+  | otherwise     = [c]
+  where e    = "^$?+[]*()|\\/-."
+        ord  = fromEnum c
+
+prettyRSetChar :: RSet Char -> String
+prettyRSetChar r
+  | RSet.null r   = []
+  | dot == r      = "."
+  | s == 1        = escapeChar $ head $ RSet.toList r
+  | s < m - s     = prettyRSetChar' r
+  | otherwise     = prettyRSetChar'' (RSet.complement r)
+  where s    = RSet.size r
+        m    = fromEnum (maxBound :: Char) - fromEnum (minBound :: Char)
+        dot  = RSet.complement $ RSet.singleton '\n'
+
+prettyRSetChar' :: RSet Char -> String
+prettyRSetChar' r        = "[" ++ concatMap p l ++ "]"
+    where l              = RSet.toRangeList r
+          p (a, b)
+            | a == b     = escapeChar a
+            | otherwise  = escapeChar a ++ "-" ++ escapeChar b
+
+prettyRSetChar'' :: RSet Char -> String
+prettyRSetChar'' r       = "[^" ++ concatMap p l ++ "]"
+    where l              = RSet.toRangeList r
+          p (a, b)
+            | a == b     = escapeChar a
+            | otherwise  = escapeChar a ++ "-" ++ escapeChar b
+
+prettyRe :: RE -> String
+prettyRe r | r == eps    = ""
+prettyRe (REChars cs)    = prettyRSetChar cs
+prettyRe (REAppend rs)   = concatMap prettyRe rs
+prettyRe (REUnion rs)    = "(?:" ++ intercalate "|" rs' ++ ")" ++ opt
+  where rs' = map prettyRe $ Set.toList $ Set.delete eps rs
+        opt | eps `Set.member` rs = "?"
+            | otherwise           = ""
+prettyRe (REKleene r)    = case prettyRe r of
+                           [c]           -> c : "*"
+                           str           -> "(" ++ str ++ ")*"

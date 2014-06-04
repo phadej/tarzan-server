@@ -11,7 +11,6 @@ import qualified Text.Tarzan.Regex as RE
 
 import Text.Tarzan.Expr
 import Text.Tarzan.Stmt
-import Text.Tarzan.Pretty
 
 import Text.Parsec (parse)
 
@@ -42,5 +41,5 @@ execute = snd . foldl f (Map.empty, "") . filter g . lines
                                                              Left err    -> (env, out ++ "// " ++ err ++ "\n")
                                                              Right expr' -> (Map.insert var expr' env, out ++ firstline ++ secondline)
                                                                where firstline = "// " ++ line ++ "\n"
-                                                                     secondline = "var " ++ var ++ " = /^" ++ pretty expr' ++ "$/;\n"
+                                                                     secondline = "var " ++ var ++ " = /^" ++ RE.prettyRe expr' ++ "$/;\n"
   
