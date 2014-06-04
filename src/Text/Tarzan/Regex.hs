@@ -1,6 +1,7 @@
 module Text.Tarzan.Regex (
   RE,
   empty,
+  nothing,
   anything,
   eps,
   char,

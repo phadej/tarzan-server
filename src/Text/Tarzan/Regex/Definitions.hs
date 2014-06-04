@@ -1,6 +1,7 @@
 module Text.Tarzan.Regex.Definitions (
   RE,
   empty,
+  nothing,
   anything,
   eps,
   char,
@@ -28,30 +29,12 @@ import qualified Data.RangeSet.List as RSet
 
 import Data.Monoid
 import Data.List (intercalate)
-import Data.Foldable (any, all)
+import Data.Foldable (any)
 import Data.Either
-
-import Text.Printf
 
 import Text.Tarzan.Pretty
 
-
-
-escapeChar :: Char -> String
-escapeChar '\n' = "\\n"
-escapeChar '\t' = "\\t"
-escapeChar '\r' = "\\r"
-escapeChar c
-  | ord > 0xffff  = error "out of bmp"
-  | ord < 0x20    = '\\' : 'x' : printf "%02x" ord
-  | ord >= 0x80   = '\\' : 'u' : printf "%04x" ord
-  | c `elem` e    = '\\' : [c]
-  | otherwise     = [c]
-  where e    = "^$?+[]*()|\\/-."
-        ord  = fromEnum c
-
-data RE = REEps
-        | REChars (RSet Char)
+data RE = REChars (RSet Char)
         | REAppend RE RE
         | REUnion (Set RE)
         | REKleene RE
@@ -63,7 +46,7 @@ instance Monoid RE where
 	mconcat = unions
 
 instance Pretty RE where
-  pretty REEps           = ""
+  pretty r | r == eps    = ""
   pretty (REChars cs)    = prettyRSetChar cs
   pretty (REAppend a b)  = pretty a ++ pretty b
   pretty (REUnion rs)    = "(?:" ++ intercalate "|" rs' ++ ")" ++ opt
@@ -77,11 +60,14 @@ instance Pretty RE where
 empty :: RE
 empty = REChars RSet.empty
 
+nothing :: RE
+nothing = empty
+
 anything :: RE
 anything = REKleene anychar
 
 eps :: RE
-eps = REEps
+eps = REKleene nothing
 
 char :: Char -> RE
 char = REChars . RSet.singleton
@@ -123,7 +109,6 @@ sortUniq :: Ord a => [a] -> [a]
 sortUniq = Set.toList . Set.fromList
 
 nullable :: RE -> Bool
-nullable REEps           = True
 nullable (REChars _)     = False
 nullable (REAppend a b)  = nullable a && nullable b
 nullable (REUnion rs)    = any nullable rs
@@ -144,8 +129,8 @@ unions = unions' . split . flatten . sortUniq
 
 kleene :: RE -> RE
 kleene r
-  | r == empty       = REEps
-  | r == anything    = anything
-  | r == eps         = REEps
+  | r == empty       = eps
+  | r == anything    = anything -- this and following are special cases of (REKleene r) case
+  | r == eps         = eps
 kleene (REKleene r)  = REKleene r
 kleene r             = REKleene r
