@@ -1,4 +1,4 @@
-module Text.Tarzan.Application where
+module Application where
 
 import Network.HTTP.Types.Status
 

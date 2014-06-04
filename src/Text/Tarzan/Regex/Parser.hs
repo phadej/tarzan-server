@@ -20,7 +20,7 @@ reChar = reCharGroup <|> reAnyChar <|> reTopSingleChar
         reCharPairCon a (Just b)  = (a, b)
         reSingleChar              = escapedChar <|> noneOf "]\\"
         reTopSingleChar           = RE.char <$> (escapedChar <|>  noneOf "$[]*+?()|.\\/")
-        reAnyChar                 = const RE.anychar <$> char '.'
+        reAnyChar                 = const RE.dot <$> char '.'
 
 reParens :: Parser RE
 reParens = char '(' *> nonmatch  *> parser <* char ')'
