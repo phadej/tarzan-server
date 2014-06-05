@@ -12,17 +12,17 @@ import qualified Text.Tarzan.Regex as RE
 
 import Text.Tarzan.Expr.Definitions
 
-singleString :: Char -> Parser RE
+singleString :: Char -> Parser (RE Char)
 singleString c = RE.string <$> (char c *> many cs <* char c)
   where cs = RE.escapedChar <|> noneOf (c : [])
 
-singleQuoteString :: Parser RE
+singleQuoteString :: Parser (RE Char)
 singleQuoteString = (lexeme $ singleString '\'') <?> "single quoted string"
 
-doubleQuoteString :: Parser RE
+doubleQuoteString :: Parser (RE Char)
 doubleQuoteString = (lexeme $ singleString '"') <?> "double quoted string"
 
-re :: Parser RE
+re :: Parser (RE Char)
 re =  lexeme (char '/' *> RE.parser <* char '/') <?> "regexp literal"
 
 literal :: Parser ExprRE

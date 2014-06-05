@@ -37,48 +37,51 @@ import Data.Either
 
 import Text.Printf
 
-data RE = REChars (RSet Char)
-        | REAppend [RE]
-        | REUnion (Set RE)
-        | REKleene RE
+data RE a = REChars (RSet a)
+          | REAppend [RE a]
+          | REUnion (Set (RE a))
+          | REKleene (RE a)
   deriving (Eq, Ord, Show)
 
-instance Monoid RE where
+instance (Ord a, Enum a) => Monoid (RE a) where
 	mempty = empty
 	mappend = union
 	mconcat = unions
 
-empty :: RE
+empty :: RE a
 empty = REChars RSet.empty
 
-nothing :: RE
+nothing :: RE a
 nothing = empty
 
-anything :: RE
+anything :: Bounded a => RE a
 anything = REKleene anychar
 
-eps :: RE
+eps :: RE a
 eps = REKleene nothing
 
-char :: Char -> RE
+char :: a -> RE a
 char = REChars . RSet.singleton
 
-chars :: Bool -> [(Char,Char)] -> RE
+chars :: (Ord a, Enum a, Bounded a) => Bool -> [(a,a)] -> RE a
 chars pos cs = REChars . con $ s
   where con | pos             = id
             | otherwise       = RSet.complement
         s                     = mconcat $ map RSet.singletonRange cs
 
-dot :: RE
-dot = REChars $ RSet.complement $ RSet.singleton '\n'
+dotSet :: RSet Char
+dotSet = RSet.complement $ RSet.singleton '\n'
 
-string :: String -> RE
+dot :: RE Char
+dot = REChars dotSet
+
+string :: Ord a => [a] -> RE a
 string = foldr append eps . map char
 
-anychar :: RE
+anychar :: Bounded a => RE a
 anychar = REChars RSet.full
 
-appends :: [RE] -> RE
+appends :: Ord a => [RE a] -> RE a
 appends rs
   | any (== empty) rs  = empty
   | otherwise          = case rs' of
@@ -87,29 +90,29 @@ appends rs
                            _    -> REAppend rs'
   where rs' = filter (/= eps) rs
 
-append :: RE -> RE -> RE
+append :: Ord a => RE a-> RE a -> RE a
 append a b = appends [a, b]
 
-(<.>) :: RE -> RE -> RE
+(<.>) :: Ord a => RE a -> RE a -> RE a
 (<.>) = append
 
-union :: RE -> RE -> RE
+union :: (Ord a, Enum a) => RE a -> RE a -> RE a
 union a b = unions [a, b]
 
-extractCharacterSets :: RE -> Either (RSet Char) RE
+extractCharacterSets :: RE a -> Either (RSet a) (RE a)
 extractCharacterSets (REChars c)  = Left c
 extractCharacterSets r            = Right r
 
 sortUniq :: Ord a => [a] -> [a]
 sortUniq = Set.toList . Set.fromList
 
-nullable :: RE -> Bool
+nullable :: RE a -> Bool
 nullable (REChars _)     = False
 nullable (REAppend rs)   = all nullable rs
 nullable (REUnion rs)    = any nullable rs
 nullable (REKleene _)    = True
 
-unions :: [RE] -> RE
+unions :: (Ord a, Enum a) => [RE a] -> RE a
 unions = unions' . split . flatten . sortUniq
   where flatten = concatMap extract
         extract (REUnion xs) = Set.toList xs
@@ -122,7 +125,7 @@ unions = unions' . split . flatten . sortUniq
         unions' [r]  = r
         unions' rs   = REUnion . Set.fromList $ rs
 
-kleene :: RE -> RE
+kleene :: (Ord a, Bounded a) => RE a -> RE a
 kleene r
   | r == empty       = eps
   | r == anything    = anything -- this and following are special cases of (REKleene r) case
@@ -130,10 +133,10 @@ kleene r
 kleene (REKleene r)  = REKleene r
 kleene r             = REKleene r
 
-kstar :: RE -> RE
+kstar :: (Ord a, Bounded a) => RE a -> RE a
 kstar = kleene
 
-kplus :: RE -> RE
+kplus :: (Ord a, Bounded a) => RE a -> RE a
 kplus r = r <.> kstar r
 
 --- pretty 
@@ -154,13 +157,12 @@ escapeChar c
 prettyRSetChar :: RSet Char -> String
 prettyRSetChar r
   | RSet.null r   = []
-  | dot == r      = "."
+  | dotSet == r   = "."
   | s == 1        = escapeChar $ head $ RSet.toList r
   | s < m - s     = prettyRSetChar' r
   | otherwise     = prettyRSetChar'' (RSet.complement r)
   where s    = RSet.size r
         m    = fromEnum (maxBound :: Char) - fromEnum (minBound :: Char)
-        dot  = RSet.complement $ RSet.singleton '\n'
 
 prettyRSetChar' :: RSet Char -> String
 prettyRSetChar' r        = "[" ++ concatMap p l ++ "]"
@@ -176,7 +178,7 @@ prettyRSetChar'' r       = "[^" ++ concatMap p l ++ "]"
             | a == b     = escapeChar a
             | otherwise  = escapeChar a ++ "-" ++ escapeChar b
 
-prettyRe :: RE -> String
+prettyRe :: RE Char -> String
 prettyRe r | r == eps    = ""
 prettyRe (REChars cs)    = prettyRSetChar cs
 prettyRe (REAppend rs)   = concatMap prettyRe rs

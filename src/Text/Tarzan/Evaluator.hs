@@ -14,7 +14,7 @@ import Text.Tarzan.Stmt
 
 import Text.Parsec (parse)
 
-substitute :: Map String RE -> ExprRE -> Either String ExprRE
+substitute :: Map String (RE Char) -> ExprRE -> Either String ExprRE
 substitute _   r@ExprRE {}     = Right r
 substitute env (ExprVar var)   = case Map.lookup var env of
                                    Just re -> Right $ ExprRE re
@@ -23,7 +23,7 @@ substitute env (REAppend a b)  = REAppend <$> substitute env a <*> substitute en
 substitute env (REUnion a b)   = REUnion <$> substitute env a <*> substitute env b
 substitute env (REKleene re)   = REKleene <$> substitute env re
 
-unsafeEval :: ExprRE -> RE
+unsafeEval :: ExprRE -> (RE Char)
 unsafeEval (ExprRE re)     = re
 unsafeEval (ExprVar var)   = error $ "unsafeEval, var found: " ++ var
 unsafeEval (REAppend a b)  = unsafeEval a RE.<.> unsafeEval b
