@@ -1,25 +1,6 @@
 module Text.Tarzan.Regex (
-  RE,
-  empty,
-  nothing,
-  anything,
-  eps,
-  char,
-  chars,
-  string,
-  anychar,
-  append,
-  (<.>),
-  union,
-  unions,
-  kleene,
-  kstar,
-  kplus,
-  parser,
-  parseRe,
-  prettyRe,
-  unsafeParseRe,
-  escapedChar,
+  module Data.Tarzan,
+  module Text.Tarzan.Regex.Parser
   ) where
 
 import Data.Tarzan
