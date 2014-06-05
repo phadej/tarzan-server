@@ -1,22 +1,29 @@
 module Data.Tarzan (
+  -- * Regular expression type
   RE,
+  -- * Terminals
   empty,
   nothing,
   anything,
   eps,
+  anychar,
   char,
   chars,
   dot,
   string,
-  anychar,
+  -- * Concatenation
   append,
   (<.>),
+  -- * Alternation
   union,
   unions,
+  -- * Kleene star & plus
   kleene,
   kstar,
   kplus,
+  -- * Matching
   nullable,
+  -- * Pretty printing
   prettyRe,
 ) where
 
@@ -54,8 +61,8 @@ empty = REChars RSet.empty
 nothing :: RE a
 nothing = empty
 
-anything :: Bounded a => RE a
-anything = REKleene anychar
+anything :: RE a
+anything = REUnion Set.empty
 
 eps :: RE a
 eps = REKleene nothing
@@ -125,7 +132,7 @@ unions = unions' . split . flatten . sortUniq
         unions' [r]  = r
         unions' rs   = REUnion . Set.fromList $ rs
 
-kleene :: (Ord a, Bounded a) => RE a -> RE a
+kleene :: Ord a => RE a -> RE a
 kleene r
   | r == empty       = eps
   | r == anything    = anything -- this and following are special cases of (REKleene r) case
@@ -133,10 +140,10 @@ kleene r
 kleene (REKleene r)  = REKleene r
 kleene r             = REKleene r
 
-kstar :: (Ord a, Bounded a) => RE a -> RE a
+kstar :: Ord a => RE a -> RE a
 kstar = kleene
 
-kplus :: (Ord a, Bounded a) => RE a -> RE a
+kplus :: Ord a => RE a -> RE a
 kplus r = r <.> kstar r
 
 --- pretty 
