@@ -10,7 +10,7 @@ import Network.Wai.Handler.Warp
 import Application (tarzanApplication)
 
 host :: String
-host = "127.0.0.1"
+host = "0.0.0.0"
 
 portIO :: IO Int
 portIO = maybe 8080 read <$> lookupEnv "PORT"
