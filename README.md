@@ -2,6 +2,10 @@
 
 > Everybody stand back. I know regular expressions.
 
+## Try out:
+
+http://tarzanre.herokuapp.com/
+
 ## Disclaimer
 
 - Output format resembles JavaScript to high extend, however

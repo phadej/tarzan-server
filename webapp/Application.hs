@@ -19,12 +19,12 @@ static :: Application
 static = staticApp (defaultWebAppSettings $ F.decodeString "static")
 
 tarzanApplication :: Application
-tarzanApplication req
-  | pathInfo req == []              = static req { pathInfo = [ T.pack "index.html" ] }
-  | pathInfo req == [T.pack "api"]  = tarzanApp req   
-  | otherwise                       = static req      
+tarzanApplication req respond
+  | pathInfo req == []              = static req { pathInfo = [ T.pack "index.html" ] } respond
+  | pathInfo req == [T.pack "api"]  = tarzanApp req respond
+  | otherwise                       = static req respond
 
 tarzanApp :: Application
-tarzanApp req = do 
+tarzanApp req respond = do
   body <- LT.unpack . LE.decodeUtf8 <$> lazyRequestBody req
-  return $ responseLBS status200 [] (LE.encodeUtf8 . LT.pack $ execute body)
+  respond $ responseLBS status200 [] (LE.encodeUtf8 . LT.pack $ execute body)
