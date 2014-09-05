@@ -2,6 +2,8 @@
 
 > Everybody stand back. I know regular expressions.
 
+[![Build Status](https://master-ci.org/phadej/tarzan.svg?branch=master)](https://master-ci.org/phadej/tarzan)
+
 ## Try out:
 
 http://tarzanre.herokuapp.com/
